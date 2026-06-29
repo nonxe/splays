@@ -31,10 +31,6 @@
             <i data-lucide="home"></i>
             <span>Home</span>
           </li>
-          <li class="nav-item" id="nav-search-menu">
-            <i data-lucide="search"></i>
-            <span>Search</span>
-          </li>
           <li class="nav-item" id="nav-liked">
             <i data-lucide="heart"></i>
             <span>Liked Songs</span>
@@ -59,17 +55,6 @@
           <!-- Dynamic playlists will be rendered here -->
         </ul>
       </div>
-
-      <div class="github-status-widget glass-panel-nested" id="github-widget">
-        <div class="status-indicator">
-          <span class="status-dot online" id="status-dot"></span>
-          <span class="status-text" id="status-text">Local Source</span>
-        </div>
-        <div class="repo-info" id="repo-info">x.txt loaded</div>
-        <button id="btn-sidebar-settings" class="btn-sidebar-action">
-          <i data-lucide="github" size="14"></i> Configure Repo
-        </button>
-      </div>
     </aside>
     
     <!-- Main Content Area -->
@@ -83,18 +68,8 @@
           </div>
           <div class="search-container" id="search-bar-wrapper">
             <i data-lucide="search" class="search-icon"></i>
-            <input type="text" id="search-input" placeholder="What do you want to play?">
+            <input type="text" id="search-input" placeholder="Search songs or artists...">
             <button id="search-clear" class="search-clear-btn"><i data-lucide="x"></i></button>
-          </div>
-        </div>
-        
-        <div class="header-right">
-          <button id="btn-open-settings" class="btn-icon-label glass-button">
-            <i data-lucide="settings"></i>
-            <span>Settings</span>
-          </button>
-          <div class="user-avatar" id="user-avatar-btn" title="GitHub Config">
-            <i data-lucide="user"></i>
           </div>
         </div>
       </header>
@@ -107,9 +82,9 @@
           <div class="welcome-banner">
             <div class="banner-overlay"></div>
             <div class="banner-content">
-              <span class="badge">FEATURED PLAYLIST</span>
+              <span class="badge">SPLAYS PLAYER</span>
               <h1 id="welcome-message">Good Evening</h1>
-              <p>Experience studio-quality playback with real-time audio analytics and full integration with your GitHub-hosted track list.</p>
+              <p>Experience high-fidelity audio playback. Your songs are loaded dynamically from <code>x.txt</code> in the repository root.</p>
               <div class="banner-buttons">
                 <button id="btn-banner-play" class="btn-primary">
                   <i data-lucide="play" class="icon-fill"></i> Play Now
@@ -324,80 +299,6 @@
       </div>
     </footer>
     
-  </div>
-
-  <!-- Settings Modal (GitHub API Configuration) -->
-  <div id="settings-modal" class="modal-overlay">
-    <div class="modal-content glass-panel animated-popup">
-      <div class="modal-header">
-        <h2><i data-lucide="github"></i> Data Source Settings</h2>
-        <button id="btn-close-settings" class="btn-icon"><i data-lucide="x"></i></button>
-      </div>
-      
-      <div class="modal-body">
-        <p class="modal-description">
-          Configure where Splays fetches its song list. By default, it will load the local <code>x.txt</code>, but you can sync directly with your GitHub repository.
-        </p>
-        
-        <div class="form-group">
-          <label for="setting-source">Data Source Type</label>
-          <select id="setting-source" class="glass-select">
-            <option value="local">Local Filesystem (x.txt in root)</option>
-            <option value="github-raw">GitHub Raw URL (Public Repo)</option>
-            <option value="github-api">GitHub API (Recommended for Private/Public)</option>
-          </select>
-        </div>
-
-        <div id="github-settings-fields">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="setting-username">GitHub Username / Owner</label>
-              <input type="text" id="setting-username" placeholder="e.g. nonxe" class="glass-input">
-            </div>
-            <div class="form-group">
-              <label for="setting-repo">Repository Name</label>
-              <input type="text" id="setting-repo" placeholder="e.g. splays" class="glass-input">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="setting-file">File Path in Repo</label>
-              <input type="text" id="setting-file" placeholder="e.g. x.txt" class="glass-input">
-            </div>
-            <div class="form-group">
-              <label for="setting-branch">Branch</label>
-              <input type="text" id="setting-branch" placeholder="e.g. main" class="glass-input">
-            </div>
-          </div>
-
-          <div class="form-group" id="pat-field-container">
-            <label for="setting-pat">GitHub PAT (Personal Access Token)</label>
-            <div class="input-with-icon">
-              <input type="password" id="setting-pat" placeholder="github_pat_..." class="glass-input">
-              <button id="btn-toggle-pat" class="btn-input-icon"><i data-lucide="eye"></i></button>
-            </div>
-            <small class="form-help">Tokens are stored securely only on your local browser (localStorage).</small>
-          </div>
-        </div>
-        
-        <div class="status-box glass-panel-nested" id="settings-status-box">
-          <div class="status-header">
-            <span>Connection Test:</span>
-            <span id="conn-status-badge" class="badge badge-idle">Idle</span>
-          </div>
-          <pre id="settings-log">No connection check executed yet.</pre>
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button id="btn-reset-settings" class="btn-secondary">Reset to Default</button>
-        <div class="footer-right-buttons">
-          <button id="btn-test-connection" class="btn-secondary">Test Connection</button>
-          <button id="btn-save-settings" class="btn-primary">Save & Sync</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Create Playlist Modal -->

@@ -1,11 +1,11 @@
 /**
- * Splays Music Player - Logic Engine
+ * Splays Music Player - Logic Engine (Simplified Local x.txt Version)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- STATE ---
-  let songs = []; // Main array of songs
-  let currentPlaylist = []; // Songs currently playing from (could be all, liked, or custom playlist)
+  let songs = []; // Main array of songs parsed from x.txt
+  let currentPlaylist = []; // Songs currently playing from
   let playlistName = 'All Tracks'; // Current playing context name
   let currentSongIndex = -1;
   let isPlaying = false;
@@ -28,27 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Playlists and Likes stored in localStorage
   let likedSongIds = JSON.parse(localStorage.getItem('splays_likes')) || [];
   let customPlaylists = JSON.parse(localStorage.getItem('splays_playlists')) || {};
-  // Format of customPlaylists: { "playlist_id": { name: "Name", desc: "Desc", songIds: [...] } }
-
-  // Settings stored in localStorage (pre-fill with user's requests)
-  const defaultSettings = {
-    source: 'github-api',
-    username: 'nonxe',
-    repo: 'splays',
-    file: 'x.txt',
-    branch: 'main',
-    pat: ''
-  };
-
-  // Load settings
-  let settings = {
-    source: localStorage.getItem('splays_source') || defaultSettings.source,
-    username: localStorage.getItem('splays_username') || defaultSettings.username,
-    repo: localStorage.getItem('splays_repo') || defaultSettings.repo,
-    file: localStorage.getItem('splays_file') || defaultSettings.file,
-    branch: localStorage.getItem('splays_branch') || defaultSettings.branch,
-    pat: localStorage.getItem('splays_pat') || defaultSettings.pat
-  };
 
   // --- UI ELEMENTS ---
   const el = {
@@ -61,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Navigation
     navHome: document.getElementById('nav-home'),
-    navSearchMenu: document.getElementById('nav-search-menu'),
     navLiked: document.getElementById('nav-liked'),
     navVisualizer: document.getElementById('nav-visualizer'),
     playlistList: document.getElementById('playlist-list'),
@@ -71,9 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput: document.getElementById('search-input'),
     searchClear: document.getElementById('search-clear'),
     welcomeMessage: document.getElementById('welcome-message'),
-    btnOpenSettings: document.getElementById('btn-open-settings'),
-    btnSidebarSettings: document.getElementById('btn-sidebar-settings'),
-    userAvatar: document.getElementById('user-avatar-btn'),
     
     // Dashboard / Views Content
     quickPicksContainer: document.getElementById('quick-picks-container'),
@@ -121,26 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
     volumeSlider: document.getElementById('volume-slider'),
     volumeFill: document.getElementById('volume-fill'),
     
-    // Modals
-    settingsModal: document.getElementById('settings-modal'),
-    btnCloseSettings: document.getElementById('btn-close-settings'),
-    btnSaveSettings: document.getElementById('btn-save-settings'),
-    btnResetSettings: document.getElementById('btn-reset-settings'),
-    btnTestConnection: document.getElementById('btn-test-connection'),
-    
-    // Settings inputs
-    settingSource: document.getElementById('setting-source'),
-    settingUsername: document.getElementById('setting-username'),
-    settingRepo: document.getElementById('setting-repo'),
-    settingFile: document.getElementById('setting-file'),
-    settingBranch: document.getElementById('setting-branch'),
-    settingPat: document.getElementById('setting-pat'),
-    btnTogglePat: document.getElementById('btn-toggle-pat'),
-    settingsLog: document.getElementById('settings-log'),
-    connStatusBadge: document.getElementById('conn-status-badge'),
-    githubSettingsFields: document.getElementById('github-settings-fields'),
-    patFieldContainer: document.getElementById('pat-field-container'),
-    
     // Playlist Modal
     playlistModal: document.getElementById('playlist-modal'),
     btnClosePlaylistModal: document.getElementById('btn-close-playlist-modal'),
@@ -169,13 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     visTrackArtist: document.getElementById('vis-track-artist'),
     visualizerStyle: document.getElementById('visualizer-style'),
     audioCanvas: document.getElementById('audio-canvas'),
-    audioNotice: document.getElementById('audio-notice'),
-    
-    // Widgets
-    githubWidget: document.getElementById('github-widget'),
-    statusDot: document.getElementById('status-dot'),
-    statusText: document.getElementById('status-text'),
-    repoInfo: document.getElementById('repo-info')
+    audioNotice: document.getElementById('audio-notice')
   };
 
   // --- AUDIO LOGIC ---
@@ -215,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function playTrack(index, forcePlay = true) {
     if (index < 0 || index >= currentPlaylist.length) return;
     
-    // Clean old class if playing before
     updateRowVisualStates();
     
     currentSongIndex = index;
@@ -231,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (forcePlay) {
       audio.play()
         .then(() => {
-          // Initialize Audio Context on user gesture if not done already
           initAudioContext();
         })
         .catch(err => {
@@ -244,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Track stats
     updateRowVisualStates();
     renderQueue();
   }
@@ -253,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function playNext() {
     if (playQueue.length > 0) {
       const nextTrack = playQueue.shift();
-      // Insert at current position or make a temporary list
       currentPlaylist.splice(currentSongIndex + 1, 0, nextTrack);
       playTrack(currentSongIndex + 1);
       return;
@@ -271,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isRepeat === 'all') {
         nextIndex = 0;
       } else {
-        // End of playlist
         isPlaying = false;
         audio.pause();
         audio.currentTime = 0;
@@ -288,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentPlaylist.length === 0) return;
     
     if (audio.currentTime > 5) {
-      // Restart current song
       audio.currentTime = 0;
       return;
     }
@@ -397,11 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
     el.btnShuffle.classList.toggle('active', isShuffle);
     
     if (isShuffle && currentPlaylist.length > 0) {
-      // Shuffle logic (keep current playing track at top)
       const currentTrack = currentPlaylist[currentSongIndex];
       const remaining = currentPlaylist.filter((_, idx) => idx !== currentSongIndex);
       
-      // Fisher-Yates Shuffle
       for (let i = remaining.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
@@ -411,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
       currentSongIndex = 0;
       updateRowVisualStates();
     } else {
-      // Revert to original order depending on context
       reloadCurrentContextOrder();
     }
   });
@@ -442,11 +382,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isRepeat === 'none') {
       isRepeat = 'all';
       el.btnRepeat.classList.add('active');
-      el.btnRepeat.querySelector('i').setAttribute('data-lucide', 'repeat');
     } else if (isRepeat === 'all') {
       isRepeat = 'one';
       el.btnRepeat.classList.add('active');
-      // Lucide repeat-1 is not always present, but repeat with styling or badge works
       el.btnRepeat.style.position = 'relative';
       let dot = el.btnRepeat.querySelector('.repeat-dot');
       if (!dot) {
@@ -480,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
       
-      // Connect nodes
       audioSource = audioCtx.createMediaElementSource(audio);
       audioSource.connect(analyser);
       analyser.connect(audioCtx.destination);
@@ -499,7 +436,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    // Set internal size matching client bounds
     function resizeCanvas() {
       if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
         canvas.width = canvas.clientWidth;
@@ -509,7 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
-    // Particles state
     const particles = [];
     for (let i = 0; i < 40; i++) {
       particles.push({
@@ -518,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         speed: 1 + Math.random() * 3,
         size: 1 + Math.random() * 4,
         alpha: 0.1 + Math.random() * 0.5,
-        colorIndex: Math.floor(Math.random() * 3) // primary, secondary, accent-blue
+        colorIndex: Math.floor(Math.random() * 3)
       });
     }
 
@@ -531,7 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       analyser.getByteFrequencyData(dataArray);
       
-      // Clear with slight alpha to produce motion trails
       ctx.fillStyle = 'rgba(12, 13, 18, 0.2)';
       ctx.fillRect(0, 0, width, height);
       
@@ -545,14 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const percent = dataArray[i] / 255;
           const barHeight = percent * height * 0.85;
           
-          // Gradient colors
           const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
-          gradient.addColorStop(0, '#8a2be2'); // Violet base
-          gradient.addColorStop(0.5, '#1db954'); // Spotify green middle
-          gradient.addColorStop(1, '#00f2fe'); // Neon blue peak
+          gradient.addColorStop(0, '#8a2be2');
+          gradient.addColorStop(0.5, '#1db954');
+          gradient.addColorStop(1, '#00f2fe');
           
           ctx.fillStyle = gradient;
-          // Rounded rectangular bar
           ctx.beginPath();
           if (ctx.roundRect) {
             ctx.roundRect(x, height - barHeight, barWidth - 2, barHeight, [4, 4, 0, 0]);
@@ -561,13 +493,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           ctx.fill();
           
-          // Glow effect on top frequencies
           if (percent > 0.7) {
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#00f2fe';
             ctx.fillStyle = '#fff';
             ctx.fillRect(x, height - barHeight, barWidth - 2, 3);
-            ctx.shadowBlur = 0; // reset
+            ctx.shadowBlur = 0;
           }
           
           x += barWidth;
@@ -575,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       else if (style === 'wave') {
-        // Draw oscilloscope line
         analyser.getByteTimeDomainData(dataArray);
         
         ctx.lineWidth = 3;
@@ -588,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let x = 0;
         
         for (let i = 0; i < bufferLength; i++) {
-          const v = dataArray[i] / 128.0; // range 0 to 2
+          const v = dataArray[i] / 128.0;
           const y = (v * height) / 2;
           
           if (i === 0) {
@@ -602,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         ctx.lineTo(width, height / 2);
         ctx.stroke();
-        ctx.shadowBlur = 0; // reset
+        ctx.shadowBlur = 0;
       }
       
       else if (style === 'circle') {
@@ -610,7 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const centerY = height / 2;
         const baseRadius = Math.min(width, height) * 0.25;
         
-        // Sum low frequencies for bass beat pulse
         let bassSum = 0;
         for (let i = 0; i < 10; i++) {
           bassSum += dataArray[i];
@@ -618,14 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const pulse = (bassSum / 10) / 255;
         const activeRadius = baseRadius + (pulse * 30);
         
-        // Draw outer aura ring
         ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(centerX, centerY, activeRadius + 20, 0, 2 * Math.PI);
         ctx.stroke();
         
-        // Radial spikes
         ctx.lineWidth = 3;
         for (let i = 0; i < bufferLength; i++) {
           const angle = (i / bufferLength) * Math.PI * 2;
@@ -637,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const endX = centerX + Math.cos(angle) * (activeRadius + amplitude);
           const endY = centerY + Math.sin(angle) * (activeRadius + amplitude);
           
-          // Dynamic gradient per line angle
           const grad = ctx.createLinearGradient(startX, startY, endX, endY);
           grad.addColorStop(0, '#1db954');
           grad.addColorStop(1, '#8a2be2');
@@ -649,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.stroke();
         }
         
-        // Center solid core
         ctx.fillStyle = 'rgba(12, 13, 18, 0.8)';
         ctx.beginPath();
         ctx.arc(centerX, centerY, activeRadius - 5, 0, 2 * Math.PI);
@@ -660,13 +585,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       else if (style === 'particles') {
-        // Retro particle field moving with beat
         let midSum = 0;
         for (let i = 10; i < 40; i++) midSum += dataArray[i];
-        const energy = (midSum / 30) / 255; // 0 to 1
+        const energy = (midSum / 30) / 255;
         
         particles.forEach(p => {
-          // Adjust velocity and size based on frequency energy
           const velY = p.speed + (energy * 15);
           p.y -= velY;
           
@@ -701,72 +624,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- DATA FETCHING & PARSING ---
 
   async function fetchSongData() {
-    updateConnectionStatus('connecting', 'Fetching file...');
-    
     try {
-      let content = '';
-      const source = settings.source;
+      // Direct relative fetch of x.txt in root
+      const res = await fetch('./x.txt');
+      if (!res.ok) throw new Error('x.txt file not found in root. Make sure x.txt exists in the repository.');
       
-      if (source === 'local') {
-        const res = await fetch('./x.txt');
-        if (!res.ok) throw new Error('Local x.txt file not found in root. Add it or configure GitHub in Settings.');
-        content = await res.text();
-      } 
-      
-      else if (source === 'github-raw') {
-        const url = `https://raw.githubusercontent.com/${settings.username}/${settings.repo}/${settings.branch}/${settings.file}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}. Ensure the repo is public.`);
-        content = await res.text();
-      } 
-      
-      else if (source === 'github-api') {
-        const url = `https://api.github.com/repos/${settings.username}/${settings.repo}/contents/${settings.file}?ref=${settings.branch}`;
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        
-        if (settings.pat) {
-          headers['Authorization'] = `token ${settings.pat}`;
-        }
-        
-        const res = await fetch(url, { headers });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(`GitHub API returned error ${res.status}: ${errData.message || res.statusText}`);
-        }
-        
-        const data = await res.json();
-        if (data.encoding === 'base64') {
-          // Robust UTF-8 Base64 decode
-          content = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-        } else {
-          throw new Error(`Invalid file encoding: ${data.encoding}. Must be base64.`);
-        }
-      }
-      
-      // Parse content
+      const content = await res.text();
       songs = parseSongTxt(content);
       
       if (songs.length === 0) {
-        throw new Error('Parsed 0 songs. Please check your x.txt formatting: (song direct url) - name - (song img url)');
+        throw new Error('Parsed 0 songs. Format must be: (song direct url) - name - (song img url)');
       }
       
-      updateConnectionStatus('online', `${songs.length} tracks sync'd`);
-      
-      // Initial context
+      // Load into context
       currentPlaylist = [...songs];
       playlistName = 'All Tracks';
       
-      // Redraw UI
+      // Update UI views
       renderAllViews();
       
     } catch (e) {
       console.error(e);
-      updateConnectionStatus('offline', e.message);
-      
-      // Fallback: If local fails, try loading embedded test song list
-      if (songs.length === 0) {
-        showLocalErrorNotice(e.message);
-      }
+      showLocalErrorNotice(e.message);
     }
   }
 
@@ -778,16 +657,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3>Failed to load tracks</h3>
           <p style="font-size: 13px; margin: 8px 0 16px 0; max-width: 400px; display: inline-block;">${errMsg}</p>
           <br>
-          <button id="btn-err-open-settings" class="btn-primary" style="display: inline-block;">Configure Settings</button>
+          <small>Create an <strong>x.txt</strong> file in your project directory with the layout: <code>url - name - cover_img</code></small>
         </td>
       </tr>
     `;
     lucide.createIcons();
-    
-    const btn = document.getElementById('btn-err-open-settings');
-    if (btn) {
-      btn.addEventListener('click', () => openModal(el.settingsModal));
-    }
   }
 
   function parseSongTxt(text) {
@@ -822,7 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function parseTrackMetadata(fullName) {
-    // If the name is in "Artist - Title" format:
     const dashIdx = fullName.indexOf(' - ');
     if (dashIdx !== -1) {
       return {
@@ -831,7 +704,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
     
-    // Fallback split by simple dash
     const dashIdx2 = fullName.indexOf('-');
     if (dashIdx2 !== -1) {
       return {
@@ -841,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     return {
-      artist: 'Splays Artist',
+      artist: 'Unknown Artist',
       title: fullName
     };
   }
@@ -850,55 +722,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
+      hash |= 0;
     }
     return Math.abs(hash).toString(16);
-  }
-
-  function updateConnectionStatus(type, msg) {
-    // Top-level status dots
-    el.statusDot.className = 'status-dot';
-    el.statusDot.classList.add(type);
-    el.statusText.innerText = type === 'online' ? 'GitHub Synced' : type === 'connecting' ? 'Connecting...' : 'Connection Offline';
-    el.repoInfo.innerText = msg;
-    
-    // Modal badge status
-    el.connStatusBadge.className = 'badge';
-    if (type === 'online') {
-      el.connStatusBadge.classList.add('badge-success');
-      el.connStatusBadge.innerText = 'Connected';
-    } else if (type === 'connecting') {
-      el.connStatusBadge.classList.add('badge-loading');
-      el.connStatusBadge.innerText = 'Loading';
-    } else {
-      el.connStatusBadge.classList.add('badge-error');
-      el.connStatusBadge.innerText = 'Offline';
-    }
   }
 
   // --- UI RENDERING & ROUTING ---
 
   function renderAllViews() {
-    // Refresh greetings
     const hour = new Date().getHours();
     let greet = 'Good Evening';
     if (hour < 12) greet = 'Good Morning';
     else if (hour < 18) greet = 'Good Afternoon';
     el.welcomeMessage.innerText = greet;
     
-    // Quick picks (First 6 songs)
     renderQuickPicks();
-    
-    // Dashboard table
     renderTracksTable();
-    
-    // Liked table
     renderLikedTable();
-    
-    // Playlists sidebar lists
     renderPlaylistsSidebar();
-    
-    // Active track display highlights
     updateRowVisualStates();
   }
 
@@ -921,12 +762,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       `;
       
-      card.addEventListener('click', (e) => {
-        // If they click play button or card itself
+      card.addEventListener('click', () => {
         currentPlaylist = [...songs];
         playlistName = 'All Tracks';
         
-        // Find index in standard songs
         const idx = songs.findIndex(s => s.id === track.id);
         playTrack(idx);
       });
@@ -1036,27 +875,21 @@ document.addEventListener('DOMContentLoaded', () => {
       </td>
     `;
     
-    // Row click play handler
     tr.addEventListener('click', (e) => {
-      // Don't trigger if clicked on buttons
       if (e.target.closest('.btn-icon') || e.target.closest('.context-menu')) return;
-      
       playContextSong(track, contextId);
     });
     
-    // Like button handler
     tr.querySelector('.track-like-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       toggleLikeTrack(track.id);
     });
     
-    // More options menu click
     tr.querySelector('.btn-track-menu').addEventListener('click', (e) => {
       e.stopPropagation();
       openContextMenu(e, track);
     });
     
-    // Right click Context Menu
     tr.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       openContextMenu(e, track);
@@ -1090,26 +923,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.querySelectorAll('tr[data-id]').forEach(tr => {
       const trackId = tr.getAttribute('data-id');
-      const trContext = tr.getAttribute('data-context');
-      
       const isPlayingCurrent = currentTrack && trackId === currentTrack.id;
       
       tr.classList.toggle('playing', isPlayingCurrent);
       
-      // Update indices/play icons in the first column
       const rowNum = tr.querySelector('.row-num');
       const rowPlay = tr.querySelector('.row-play-icon');
       
       if (isPlayingCurrent) {
         rowNum.style.display = 'none';
         rowPlay.style.display = 'block';
-        
-        // Change play icon inside row to playing state (visualizer or pause)
-        if (isPlaying) {
-          rowPlay.setAttribute('data-lucide', 'pause');
-        } else {
-          rowPlay.setAttribute('data-lucide', 'play');
-        }
+        rowPlay.setAttribute('data-lucide', isPlaying ? 'pause' : 'play');
       } else {
         rowNum.style.display = 'block';
         rowPlay.style.display = 'none';
@@ -1125,11 +949,9 @@ document.addEventListener('DOMContentLoaded', () => {
     el.playerSongTitle.innerText = track.title;
     el.playerSongArtist.innerText = track.artist;
     
-    // Liked button state
     const isLiked = likedSongIds.includes(track.id);
     el.btnPlayerLike.classList.toggle('liked', isLiked);
     
-    // Full screen Visualizer updates
     el.visCoverArt.src = track.img;
     el.visTrackTitle.innerText = track.title;
     el.visTrackArtist.innerText = track.artist;
@@ -1138,7 +960,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function updatePlayStateUI() {
     if (isPlaying) {
       el.playIconMain.setAttribute('data-lucide', 'pause');
-      // Spin cover art visualizer view
       el.visCoverArt.style.animationPlayState = 'running';
     } else {
       el.playIconMain.setAttribute('data-lucide', 'play');
@@ -1159,17 +980,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     localStorage.setItem('splays_likes', JSON.stringify(likedSongIds));
-    
-    // Re-render
     renderLikedTable();
     
-    // Update player bar if current track changed
     const currentTrack = currentPlaylist[currentSongIndex];
     if (currentTrack && currentTrack.id === id) {
       el.btnPlayerLike.classList.toggle('liked', likedSongIds.includes(id));
     }
     
-    // Update row states in all views
     document.querySelectorAll(`tr[data-id="${id}"] .track-like-btn`).forEach(btn => {
       btn.classList.toggle('liked', likedSongIds.includes(id));
     });
@@ -1198,7 +1015,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     localStorage.setItem('splays_playlists', JSON.stringify(customPlaylists));
     
-    // Reset modal
     el.playlistNameInput.value = '';
     el.playlistDescInput.value = '';
     closeModal(el.playlistModal);
@@ -1220,7 +1036,6 @@ document.addEventListener('DOMContentLoaded', () => {
       li.innerText = pl.name;
       
       li.addEventListener('click', () => {
-        // Toggle active
         document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
         li.classList.add('active');
         
@@ -1239,7 +1054,6 @@ document.addEventListener('DOMContentLoaded', () => {
       pl.songIds.push(trackId);
       localStorage.setItem('splays_playlists', JSON.stringify(customPlaylists));
       
-      // If currently viewing this playlist, refresh
       if (playlistName === `Playlist:${pid}`) {
         renderPlaylistTable(pid);
       }
@@ -1264,7 +1078,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderQueue() {
     el.queueListContainer.innerHTML = '';
     
-    // Now playing
     const curTrack = currentPlaylist[currentSongIndex];
     if (curTrack) {
       el.queueCurrentContainer.innerHTML = `
@@ -1278,7 +1091,6 @@ document.addEventListener('DOMContentLoaded', () => {
       el.queueCurrentContainer.innerHTML = `<span style="font-size: 12px; color: var(--text-muted);">No track playing</span>`;
     }
     
-    // Queue items
     if (playQueue.length === 0) {
       el.queueListContainer.innerHTML = `<li style="font-size: 12px; color: var(--text-subtle); padding: 12px 0;">Queue is empty</li>`;
       return;
@@ -1305,8 +1117,6 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         
-        // Double click/Click play queue track
-        // Remove from queue and play
         playQueue.splice(index, 1);
         currentPlaylist.splice(currentSongIndex + 1, 0, track);
         playTrack(currentSongIndex + 1);
@@ -1331,7 +1141,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const menu = el.trackContextMenu;
     menu.style.display = 'block';
     
-    // Position menu carefully within viewport boundaries
     let posX = e.clientX;
     let posY = e.clientY;
     
@@ -1344,7 +1153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     menu.style.left = `${posX}px`;
     menu.style.top = `${posY}px`;
     
-    // Add submenus playlists dynamically
     el.contextSubmenuPlaylists.innerHTML = '';
     const pKeys = Object.keys(customPlaylists);
     
@@ -1364,9 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
-    // Hook actions
     el.menuPlayNow.onclick = () => {
-      // Find row context
       const row = document.querySelector(`tr[data-id="${track.id}"]`);
       const ctx = row ? row.getAttribute('data-context') : 'all-tracks';
       playContextSong(track, ctx);
@@ -1385,7 +1191,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Dismiss context menu
   document.addEventListener('click', () => {
     el.trackContextMenu.style.display = 'none';
   });
@@ -1400,7 +1205,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     viewElement.classList.add('active-view');
     
-    // Reset sidebar highlights
     el.navHome.classList.remove('active');
     el.navLiked.classList.remove('active');
     el.navVisualizer.classList.remove('active');
@@ -1409,13 +1213,11 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (viewElement === el.viewLiked) el.navLiked.classList.add('active');
     else if (viewElement === el.viewVisualizer) el.navVisualizer.classList.add('active');
     
-    // Scroll view to top
     el.contentScroll.scrollTop = 0;
   }
 
   function navigateToHome() {
     showView(el.viewHome);
-    // Un-highlight playlists in sidebar
     document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
   }
 
@@ -1426,7 +1228,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   el.navVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
   el.btnToggleVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
-  
   el.btnBannerVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
   
   el.btnBannerPlay.addEventListener('click', () => {
@@ -1452,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- SETTINGS MODAL ENGINE ---
+  // --- MODALS ENGINE ---
 
   function openModal(modalEl) {
     modalEl.style.display = 'flex';
@@ -1462,144 +1263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     modalEl.style.display = 'none';
   }
 
-  el.btnOpenSettings.addEventListener('click', () => {
-    prefillSettingsInputs();
-    openModal(el.settingsModal);
-  });
-  
-  el.btnSidebarSettings.addEventListener('click', () => {
-    prefillSettingsInputs();
-    openModal(el.settingsModal);
-  });
-
-  el.userAvatar.addEventListener('click', () => {
-    prefillSettingsInputs();
-    openModal(el.settingsModal);
-  });
-
-  el.btnCloseSettings.addEventListener('click', () => closeModal(el.settingsModal));
-  
-  // Close modal when clicking outside content
   window.addEventListener('click', (e) => {
-    if (e.target === el.settingsModal) closeModal(el.settingsModal);
     if (e.target === el.playlistModal) closeModal(el.playlistModal);
-  });
-
-  // Toggle settings visibility based on source selection
-  el.settingSource.addEventListener('change', () => {
-    const val = el.settingSource.value;
-    if (val === 'local') {
-      el.githubSettingsFields.style.display = 'none';
-    } else {
-      el.githubSettingsFields.style.display = 'block';
-      el.patFieldContainer.style.display = val === 'github-api' ? 'flex' : 'none';
-    }
-  });
-
-  el.btnTogglePat.addEventListener('click', () => {
-    const isPass = el.settingPat.type === 'password';
-    el.settingPat.type = isPass ? 'text' : 'password';
-    el.btnTogglePat.querySelector('i').setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
-    lucide.createIcons();
-  });
-
-  function prefillSettingsInputs() {
-    el.settingSource.value = settings.source;
-    el.settingUsername.value = settings.username;
-    el.settingRepo.value = settings.repo;
-    el.settingFile.value = settings.file;
-    el.settingBranch.value = settings.branch;
-    el.settingPat.value = settings.pat;
-    
-    // Toggle field visibility
-    el.settingSource.dispatchEvent(new Event('change'));
-  }
-
-  // Save Settings
-  el.btnSaveSettings.addEventListener('click', () => {
-    settings.source = el.settingSource.value;
-    settings.username = el.settingUsername.value.trim();
-    settings.repo = el.settingRepo.value.trim();
-    settings.file = el.settingFile.value.trim();
-    settings.branch = el.settingBranch.value.trim();
-    settings.pat = el.settingPat.value.trim();
-    
-    localStorage.setItem('splays_source', settings.source);
-    localStorage.setItem('splays_username', settings.username);
-    localStorage.setItem('splays_repo', settings.repo);
-    localStorage.setItem('splays_file', settings.file);
-    localStorage.setItem('splays_branch', settings.branch);
-    localStorage.setItem('splays_pat', settings.pat);
-    
-    closeModal(el.settingsModal);
-    fetchSongData();
-  });
-
-  // Reset settings
-  el.btnResetSettings.addEventListener('click', () => {
-    if (confirm('Reset settings to default?')) {
-      settings = { ...defaultSettings };
-      prefillSettingsInputs();
-    }
-  });
-
-  // Test connection
-  el.btnTestConnection.addEventListener('click', async () => {
-    const logEl = el.settingsLog;
-    logEl.innerText = 'Testing connection...';
-    
-    const testSrc = el.settingSource.value;
-    const testUser = el.settingUsername.value.trim();
-    const testRepo = el.settingRepo.value.trim();
-    const testFile = el.settingFile.value.trim();
-    const testBranch = el.settingBranch.value.trim();
-    const testPat = el.settingPat.value.trim();
-    
-    try {
-      if (testSrc === 'local') {
-        const res = await fetch('./x.txt');
-        if (!res.ok) throw new Error('Local x.txt not found in root directory.');
-        const text = await res.text();
-        const cnt = parseSongTxt(text).length;
-        logEl.innerText = `Success!\nFound local file.\nParsed ${cnt} songs correctly.`;
-      } 
-      
-      else if (testSrc === 'github-raw') {
-        const url = `https://raw.githubusercontent.com/${testUser}/${testRepo}/${testBranch}/${testFile}`;
-        logEl.innerText += `\nGET ${url}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}. Check repository visibility (must be Public).`);
-        const text = await res.text();
-        const cnt = parseSongTxt(text).length;
-        logEl.innerText = `Success!\nFetched raw file from public GitHub.\nParsed ${cnt} songs.`;
-      } 
-      
-      else if (testSrc === 'github-api') {
-        const url = `https://api.github.com/repos/${testUser}/${testRepo}/contents/${testFile}?ref=${testBranch}`;
-        logEl.innerText += `\nGET ${url}`;
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (testPat) {
-          headers['Authorization'] = `token ${testPat}`;
-        }
-        
-        const res = await fetch(url, { headers });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(`GitHub API returned ${res.status}: ${errData.message || res.statusText}`);
-        }
-        
-        const data = await res.json();
-        if (data.encoding === 'base64') {
-          const content = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-          const cnt = parseSongTxt(content).length;
-          logEl.innerText = `Success!\nSuccessfully authenticated via API.\nRepository: ${testUser}/${testRepo}\nFile: ${testFile}\nParsed ${cnt} songs.`;
-        } else {
-          throw new Error(`Invalid file encoding returned: ${data.encoding}`);
-        }
-      }
-    } catch (e) {
-      logEl.innerText = `Connection Test Failed!\nError: ${e.message}`;
-    }
   });
 
   // --- PLAYLIST MODAL ACTIONS ---
@@ -1615,7 +1280,6 @@ document.addEventListener('DOMContentLoaded', () => {
   el.btnCloseQueue.addEventListener('click', () => {
     el.queueDrawer.style.display = 'none';
   });
-  // Close drawer on overlay click
   el.queueDrawer.addEventListener('click', (e) => {
     if (e.target === el.queueDrawer) el.queueDrawer.style.display = 'none';
   });
@@ -1626,7 +1290,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = el.searchInput.value.trim().toLowerCase();
     el.searchClear.style.display = val ? 'flex' : 'none';
     
-    // Debounce search filter
     if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       filterTracks(val);
@@ -1663,14 +1326,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   }
 
-  // Hook global buttons
   el.btnPlayPause.addEventListener('click', togglePlay);
   el.btnPrev.addEventListener('click', playPrev);
   el.btnNext.addEventListener('click', playNext);
 
-  // Initialize Icons
   lucide.createIcons();
 
-  // Load Initial Settings & Data
+  // Load song list directly on page load
   fetchSongData();
 });
