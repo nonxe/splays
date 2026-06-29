@@ -84,7 +84,7 @@
             <div class="banner-content">
               <span class="badge">SPLAYS PLAYER</span>
               <h1 id="welcome-message">Good Evening</h1>
-              <p>Experience high-fidelity audio playback. Your songs are loaded dynamically from <code>x.txt</code> in the repository root.</p>
+              <p>Experience high-fidelity audio playback and beautiful visualizations in real-time.</p>
               <div class="banner-buttons">
                 <button id="btn-banner-play" class="btn-primary">
                   <i data-lucide="play" class="icon-fill"></i> Play Now
@@ -271,10 +271,7 @@
         
         <div class="player-progress-container">
           <span class="time-stamp" id="time-current">0:00</span>
-          <div class="progress-bar-wrapper">
-            <input type="range" id="progress-slider" min="0" max="100" value="0" step="0.1">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
+          <input type="range" id="progress-slider" min="0" max="100" value="0" step="0.1" class="spotify-slider">
           <span class="time-stamp" id="time-total">0:00</span>
         </div>
       </div>
@@ -291,10 +288,7 @@
           <button id="btn-volume-mute" class="btn-icon" title="Mute/Unmute">
             <i data-lucide="volume-2" id="volume-icon"></i>
           </button>
-          <div class="volume-bar-wrapper">
-            <input type="range" id="volume-slider" min="0" max="100" value="70">
-            <div class="volume-fill" id="volume-fill"></div>
-          </div>
+          <input type="range" id="volume-slider" min="0" max="100" value="70" class="spotify-slider">
         </div>
       </div>
     </footer>

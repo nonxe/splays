@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let isShuffle = false;
   let isRepeat = 'none'; // 'none' | 'one' | 'all'
   let playQueue = [];
+  let viewHistory = ['home'];
+  let historyIndex = 0;
+  let currentViewingPlaylistId = null;
   
   // Audio HTML5 Object
   const audio = new Audio();
@@ -43,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     navLiked: document.getElementById('nav-liked'),
     navVisualizer: document.getElementById('nav-visualizer'),
     playlistList: document.getElementById('playlist-list'),
+    navBack: document.getElementById('nav-back'),
+    navForward: document.getElementById('nav-forward'),
     
     // Header
     searchContainer: document.getElementById('search-bar-wrapper'),
@@ -54,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     quickPicksContainer: document.getElementById('quick-picks-container'),
     tracksTableBody: document.getElementById('tracks-table-body'),
     likedTableBody: document.getElementById('liked-table-body'),
+    likedSummary: document.getElementById('liked-summary'),
     playlistTableBody: document.getElementById('playlist-table-body'),
     trackCountText: document.getElementById('track-count-text'),
     
@@ -80,21 +86,17 @@ document.addEventListener('DOMContentLoaded', () => {
     btnShuffle: document.getElementById('btn-shuffle'),
     btnPrev: document.getElementById('btn-prev'),
     btnPlayPause: document.getElementById('btn-play-pause'),
-    playIconMain: document.getElementById('play-icon-main'),
     btnNext: document.getElementById('btn-next'),
     btnRepeat: document.getElementById('btn-repeat'),
     
     timeCurrent: document.getElementById('time-current'),
     timeTotal: document.getElementById('time-total'),
     progressSlider: document.getElementById('progress-slider'),
-    progressFill: document.getElementById('progress-fill'),
     
     btnToggleVisualizer: document.getElementById('btn-toggle-visualizer'),
     btnToggleQueue: document.getElementById('btn-toggle-queue'),
     btnVolumeMute: document.getElementById('btn-volume-mute'),
-    volumeIcon: document.getElementById('volume-icon'),
     volumeSlider: document.getElementById('volume-slider'),
-    volumeFill: document.getElementById('volume-fill'),
     
     // Playlist Modal
     playlistModal: document.getElementById('playlist-modal'),
@@ -253,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     isPlaying = true;
     updatePlayStateUI();
     document.body.classList.add('body-playing');
+    initAudioContext();
   });
 
   audio.addEventListener('pause', () => {
@@ -265,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audio.duration) {
       const pct = (audio.currentTime / audio.duration) * 100;
       el.progressSlider.value = pct;
-      el.progressFill.style.width = `${pct}%`;
+      el.progressSlider.style.background = `linear-gradient(to right, var(--primary) ${pct}%, rgba(255, 255, 255, 0.1) ${pct}%)`;
       el.timeCurrent.innerText = formatTime(audio.currentTime);
     }
   });
@@ -282,10 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Slider seek handlers
   el.progressSlider.addEventListener('input', () => {
+    const pct = el.progressSlider.value;
+    el.progressSlider.style.background = `linear-gradient(to right, var(--primary) ${pct}%, rgba(255, 255, 255, 0.1) ${pct}%)`;
     if (audio.duration) {
-      const seekTime = (el.progressSlider.value / 100) * audio.duration;
+      const seekTime = (pct / 100) * audio.duration;
       el.timeCurrent.innerText = formatTime(seekTime);
-      el.progressFill.style.width = `${el.progressSlider.value}%`;
     }
   });
 
@@ -297,9 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Volume handles
   el.volumeSlider.addEventListener('input', () => {
-    volume = el.volumeSlider.value / 100;
+    const pct = el.volumeSlider.value;
+    el.volumeSlider.style.background = `linear-gradient(to right, var(--primary) ${pct}%, rgba(255, 255, 255, 0.1) ${pct}%)`;
+    volume = pct / 100;
     audio.volume = volume;
-    el.volumeFill.style.width = `${el.volumeSlider.value}%`;
     updateVolumeIcon();
     
     if (volume > 0) {
@@ -312,11 +317,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMuted) {
       audio.volume = 0;
       el.volumeSlider.value = 0;
-      el.volumeFill.style.width = '0%';
+      el.volumeSlider.style.background = `linear-gradient(to right, var(--primary) 0%, rgba(255, 255, 255, 0.1) 0%)`;
     } else {
       audio.volume = volume;
       el.volumeSlider.value = volume * 100;
-      el.volumeFill.style.width = `${volume * 100}%`;
+      el.volumeSlider.style.background = `linear-gradient(to right, var(--primary) ${volume * 100}%, rgba(255, 255, 255, 0.1) ${volume * 100}%)`;
     }
     updateVolumeIcon();
   });
@@ -330,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (audio.volume < 0.7) {
       iconName = 'volume-1';
     }
-    el.volumeIcon.setAttribute('data-lucide', iconName);
+    el.btnVolumeMute.innerHTML = `<i data-lucide="${iconName}"></i>`;
     lucide.createIcons();
   }
 
@@ -464,6 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const width = canvas.width;
       const height = canvas.height;
       
+      if (width === 0 || height === 0) return;
+      
       analyser.getByteFrequencyData(dataArray);
       
       ctx.fillStyle = 'rgba(12, 13, 18, 0.2)';
@@ -550,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, activeRadius + 20, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, Math.max(1, activeRadius + 20), 0, 2 * Math.PI);
         ctx.stroke();
         
         ctx.lineWidth = 3;
@@ -577,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         ctx.fillStyle = 'rgba(12, 13, 18, 0.8)';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, activeRadius - 5, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, Math.max(1, activeRadius - 5), 0, 2 * Math.PI);
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -625,39 +632,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function fetchSongData() {
     try {
-      // Direct relative fetch of x.txt in root
       const res = await fetch('./x.txt');
-      if (!res.ok) throw new Error('x.txt file not found in root. Make sure x.txt exists in the repository.');
+      if (!res.ok) throw new Error('Data source unreachable');
       
       const content = await res.text();
       songs = parseSongTxt(content);
       
       if (songs.length === 0) {
-        throw new Error('Parsed 0 songs. Format must be: (song direct url) - name - (song img url)');
+        throw new Error('No songs parsed');
       }
       
-      // Load into context
       currentPlaylist = [...songs];
       playlistName = 'All Tracks';
-      
-      // Update UI views
       renderAllViews();
       
     } catch (e) {
       console.error(e);
-      showLocalErrorNotice(e.message);
+      showLocalErrorNotice();
     }
   }
 
-  function showLocalErrorNotice(errMsg) {
+  function showLocalErrorNotice() {
     el.tracksTableBody.innerHTML = `
       <tr>
         <td colspan="3" class="table-error-cell" style="text-align: center; padding: 40px; color: var(--text-muted);">
-          <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ffd200; margin-bottom: 12px; display: inline-block;"></i>
-          <h3>Failed to load tracks</h3>
-          <p style="font-size: 13px; margin: 8px 0 16px 0; max-width: 400px; display: inline-block;">${errMsg}</p>
-          <br>
-          <small>Create an <strong>x.txt</strong> file in your project directory with the layout: <code>url - name - cover_img</code></small>
+          <i data-lucide="music-4" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 12px; display: inline-block;"></i>
+          <h3>No tracks available</h3>
+          <p style="font-size: 13px; margin: 8px 0 16px 0; max-width: 400px; display: inline-block;">Check back later or add your audio content.</p>
         </td>
       </tr>
     `;
@@ -670,52 +671,38 @@ document.addEventListener('DOMContentLoaded', () => {
     
     lines.forEach((line, idx) => {
       line = line.trim();
-      if (!line) return; // skip empty
+      if (!line) return;
       
-      // Split by ' - ' safely
       const parts = line.split(/\s+-\s+/);
       if (parts.length >= 2) {
         const url = parts[0].trim();
-        const rawName = parts[1].trim();
-        const img = parts[2] ? parts[2].trim() : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&h=300&fit=crop';
+        let img = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&h=300&fit=crop';
+        let title = 'Unknown Title';
+        let artist = 'Unknown Artist';
         
-        const metadata = parseTrackMetadata(rawName);
+        if (parts.length >= 4) {
+          img = parts[1].trim();
+          title = parts[2].trim();
+          artist = parts.slice(3).join(' - ').trim();
+        } else if (parts.length === 3) {
+          img = parts[1].trim();
+          title = parts[2].trim();
+        } else if (parts.length === 2) {
+          title = parts[1].trim();
+        }
         
         parsed.push({
           id: `song_${idx}_${hashString(url)}`,
           url: url,
-          fullName: rawName,
-          title: metadata.title,
-          artist: metadata.artist,
+          fullName: `${artist} - ${title}`,
+          title: title,
+          artist: artist,
           img: img
         });
       }
     });
     
     return parsed;
-  }
-
-  function parseTrackMetadata(fullName) {
-    const dashIdx = fullName.indexOf(' - ');
-    if (dashIdx !== -1) {
-      return {
-        artist: fullName.substring(0, dashIdx).trim(),
-        title: fullName.substring(dashIdx + 3).trim()
-      };
-    }
-    
-    const dashIdx2 = fullName.indexOf('-');
-    if (dashIdx2 !== -1) {
-      return {
-        artist: fullName.substring(0, dashIdx2).trim(),
-        title: fullName.substring(dashIdx2 + 1).trim()
-      };
-    }
-    
-    return {
-      artist: 'Unknown Artist',
-      title: fullName
-    };
   }
 
   function hashString(str) {
@@ -812,6 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPlaylistTable(pid) {
+    currentViewingPlaylistId = pid;
     el.playlistTableBody.innerHTML = '';
     const pl = customPlaylists[pid];
     if (!pl) return;
@@ -849,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     tr.innerHTML = `
       <td class="col-num">
-        <div class="track-index-col">
+        <div class="track-index-col" data-index="${index + 1}">
           <span class="row-num">${index + 1}</span>
           <i data-lucide="play" class="row-play-icon icon-fill" size="14"></i>
         </div>
@@ -927,17 +915,22 @@ document.addEventListener('DOMContentLoaded', () => {
       
       tr.classList.toggle('playing', isPlayingCurrent);
       
-      const rowNum = tr.querySelector('.row-num');
-      const rowPlay = tr.querySelector('.row-play-icon');
+      const indexCol = tr.querySelector('.track-index-col');
+      if (!indexCol) return;
+      
+      const originalIndex = indexCol.getAttribute('data-index');
       
       if (isPlayingCurrent) {
-        rowNum.style.display = 'none';
-        rowPlay.style.display = 'block';
-        rowPlay.setAttribute('data-lucide', isPlaying ? 'pause' : 'play');
+        if (isPlaying) {
+          indexCol.innerHTML = `<i data-lucide="pause" class="row-play-icon icon-fill" size="14"></i>`;
+        } else {
+          indexCol.innerHTML = `<i data-lucide="play" class="row-play-icon icon-fill" size="14"></i>`;
+        }
       } else {
-        rowNum.style.display = 'block';
-        rowPlay.style.display = 'none';
-        rowPlay.setAttribute('data-lucide', 'play');
+        indexCol.innerHTML = `
+          <span class="row-num">${originalIndex}</span>
+          <i data-lucide="play" class="row-play-icon icon-fill" size="14" style="display: none;"></i>
+        `;
       }
     });
     
@@ -949,6 +942,11 @@ document.addEventListener('DOMContentLoaded', () => {
     el.playerSongTitle.innerText = track.title;
     el.playerSongArtist.innerText = track.artist;
     
+    el.progressSlider.value = 0;
+    el.progressSlider.style.background = `linear-gradient(to right, var(--primary) 0%, rgba(255, 255, 255, 0.1) 0%)`;
+    el.timeCurrent.innerText = '0:00';
+    el.timeTotal.innerText = '0:00';
+    
     const isLiked = likedSongIds.includes(track.id);
     el.btnPlayerLike.classList.toggle('liked', isLiked);
     
@@ -958,13 +956,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updatePlayStateUI() {
-    if (isPlaying) {
-      el.playIconMain.setAttribute('data-lucide', 'pause');
-      el.visCoverArt.style.animationPlayState = 'running';
-    } else {
-      el.playIconMain.setAttribute('data-lucide', 'play');
-      el.visCoverArt.style.animationPlayState = 'paused';
-    }
+    el.btnPlayPause.innerHTML = isPlaying ? `<i data-lucide="pause"></i>` : `<i data-lucide="play"></i>`;
+    el.visCoverArt.style.animationPlayState = isPlaying ? 'running' : 'paused';
     lucide.createIcons();
     updateRowVisualStates();
   }
@@ -1020,9 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal(el.playlistModal);
     
     renderPlaylistsSidebar();
-    showView(el.viewPlaylist);
-    renderPlaylistTable(pid);
-    playlistName = `Playlist:${pid}`;
+    navigateToView(pid);
   });
 
   function renderPlaylistsSidebar() {
@@ -1036,12 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
       li.innerText = pl.name;
       
       li.addEventListener('click', () => {
-        document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
-        li.classList.add('active');
-        
-        showView(el.viewPlaylist);
-        renderPlaylistTable(pid);
-        playlistName = `Playlist:${pid}`;
+        navigateToView(pid);
       });
       
       el.playlistList.appendChild(li);
@@ -1061,15 +1047,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   el.btnDeletePlaylist.addEventListener('click', () => {
-    if (!playlistName.startsWith('Playlist:')) return;
-    const pid = playlistName.split(':')[1];
+    let pid = currentViewingPlaylistId;
+    if (!pid && playlistName.startsWith('Playlist:')) {
+      pid = playlistName.split(':')[1];
+    }
+    if (!pid || !customPlaylists[pid]) return;
     
     if (confirm('Are you sure you want to delete this playlist?')) {
       delete customPlaylists[pid];
       localStorage.setItem('splays_playlists', JSON.stringify(customPlaylists));
-      
+      currentViewingPlaylistId = null;
+      if (playlistName === `Playlist:${pid}`) {
+        playlistName = 'All Tracks';
+      }
       renderPlaylistsSidebar();
-      navigateToHome();
+      navigateToView('home');
     }
   });
 
@@ -1216,19 +1208,60 @@ document.addEventListener('DOMContentLoaded', () => {
     el.contentScroll.scrollTop = 0;
   }
 
-  function navigateToHome() {
-    showView(el.viewHome);
+  function navigateToView(target, pushHistory = true) {
+    if (pushHistory) {
+      if (historyIndex < viewHistory.length - 1) {
+        viewHistory = viewHistory.slice(0, historyIndex + 1);
+      }
+      if (viewHistory[viewHistory.length - 1] !== target) {
+        viewHistory.push(target);
+        historyIndex = viewHistory.length - 1;
+      }
+    }
+    
     document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
+    
+    if (target === 'home') {
+      showView(el.viewHome);
+    } else if (target === 'liked') {
+      showView(el.viewLiked);
+    } else if (target === 'visualizer') {
+      showView(el.viewVisualizer);
+    } else if (typeof target === 'string' && target.startsWith('pl_')) {
+      showView(el.viewPlaylist);
+      renderPlaylistTable(target);
+      const li = document.querySelector(`.playlist-item[data-pid="${target}"]`);
+      if (li) li.classList.add('active');
+    }
+  }
+
+  function navigateToHome() {
+    navigateToView('home');
+  }
+
+  if (el.navBack) {
+    el.navBack.addEventListener('click', () => {
+      if (historyIndex > 0) {
+        historyIndex--;
+        navigateToView(viewHistory[historyIndex], false);
+      }
+    });
+  }
+
+  if (el.navForward) {
+    el.navForward.addEventListener('click', () => {
+      if (historyIndex < viewHistory.length - 1) {
+        historyIndex++;
+        navigateToView(viewHistory[historyIndex], false);
+      }
+    });
   }
 
   el.navHome.addEventListener('click', navigateToHome);
-  el.navLiked.addEventListener('click', () => {
-    showView(el.viewLiked);
-    document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
-  });
-  el.navVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
-  el.btnToggleVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
-  el.btnBannerVisualizer.addEventListener('click', () => showView(el.viewVisualizer));
+  el.navLiked.addEventListener('click', () => navigateToView('liked'));
+  el.navVisualizer.addEventListener('click', () => navigateToView('visualizer'));
+  el.btnToggleVisualizer.addEventListener('click', () => navigateToView('visualizer'));
+  el.btnBannerVisualizer.addEventListener('click', () => navigateToView('visualizer'));
   
   el.btnBannerPlay.addEventListener('click', () => {
     if (songs.length > 0) {
@@ -1239,8 +1272,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   el.btnPlaylistPlay.addEventListener('click', () => {
-    if (currentPlaylist.length > 0) {
-      playTrack(0);
+    if (currentViewingPlaylistId && customPlaylists[currentViewingPlaylistId]) {
+      const pl = customPlaylists[currentViewingPlaylistId];
+      const plTracks = songs.filter(s => pl.songIds.includes(s.id));
+      if (plTracks.length > 0) {
+        currentPlaylist = plTracks;
+        playlistName = `Playlist:${currentViewingPlaylistId}`;
+        playTrack(0);
+      }
     }
   });
   
@@ -1329,6 +1368,12 @@ document.addEventListener('DOMContentLoaded', () => {
   el.btnPlayPause.addEventListener('click', togglePlay);
   el.btnPrev.addEventListener('click', playPrev);
   el.btnNext.addEventListener('click', playNext);
+
+  // Set initial slider colors
+  el.volumeSlider.value = volume * 100;
+  el.volumeSlider.style.background = `linear-gradient(to right, var(--primary) ${volume * 100}%, rgba(255, 255, 255, 0.1) ${volume * 100}%)`;
+  el.progressSlider.value = 0;
+  el.progressSlider.style.background = `linear-gradient(to right, var(--primary) 0%, rgba(255, 255, 255, 0.1) 0%)`;
 
   lucide.createIcons();
 

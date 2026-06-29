@@ -851,11 +851,7 @@ body {
   color: var(--text-muted);
   padding: 4px;
 }
-.track-like-btn.liked {
-  color: var(--primary);
-  filter: drop-shadow(0 0 4px var(--primary-glow));
-}
-.track-like-btn.liked i {
+.track-like-btn.liked i, .track-like-btn.liked svg {
   fill: var(--primary);
 }
 
@@ -1227,38 +1223,58 @@ body {
   text-align: center;
 }
 
-.progress-bar-wrapper, .volume-bar-wrapper {
+.spotify-slider {
+  -webkit-appearance: none;
+  appearance: none;
   flex: 1;
   height: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(to right, var(--primary) 0%, rgba(255, 255, 255, 0.1) 0%);
   border-radius: 2px;
+  outline: none;
+  cursor: pointer;
   position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
 }
 
-.progress-bar-wrapper input, .volume-bar-wrapper input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.spotify-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.spotify-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  margin-top: -4px;
   opacity: 0;
-  cursor: pointer;
-  z-index: 10;
+  transition: opacity 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.progress-fill, .volume-fill {
-  height: 100%;
-  background-color: var(--text-main);
-  border-radius: 2px;
-  width: 0;
-  transition: background-color 0.2s ease;
+.spotify-slider:hover::-webkit-slider-thumb {
+  opacity: 1;
 }
 
-.progress-bar-wrapper:hover .progress-fill, .volume-bar-wrapper:hover .volume-fill {
-  background-color: var(--primary);
+.spotify-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+
+.spotify-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.spotify-slider:hover::-moz-range-thumb {
+  opacity: 1;
 }
 
 /* Volume / Utility Controls */
