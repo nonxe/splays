@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splays - Premium Music Experience</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="app-container" class="app-grid">
+    
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="glass-panel">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i data-lucide="music-4" class="logo-icon"></i>
+          <span class="logo-text">Splays</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item active" id="nav-home">
+            <i data-lucide="home"></i>
+            <span>Home</span>
+          </li>
+          <li class="nav-item" id="nav-search-menu">
+            <i data-lucide="search"></i>
+            <span>Search</span>
+          </li>
+          <li class="nav-item" id="nav-liked">
+            <i data-lucide="heart"></i>
+            <span>Liked Songs</span>
+          </li>
+          <li class="nav-item" id="nav-visualizer">
+            <i data-lucide="activity"></i>
+            <span>Visualizer Mode</span>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-separator"></div>
+      
+      <div class="playlist-section">
+        <div class="playlist-header">
+          <span class="section-title">Playlists</span>
+          <button id="btn-create-playlist" class="btn-icon" title="Create Playlist">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+        <ul id="playlist-list" class="playlist-scroll">
+          <!-- Dynamic playlists will be rendered here -->
+        </ul>
+      </div>
+
+      <div class="github-status-widget glass-panel-nested" id="github-widget">
+        <div class="status-indicator">
+          <span class="status-dot online" id="status-dot"></span>
+          <span class="status-text" id="status-text">Local Source</span>
+        </div>
+        <div class="repo-info" id="repo-info">x.txt loaded</div>
+        <button id="btn-sidebar-settings" class="btn-sidebar-action">
+          <i data-lucide="github" size="14"></i> Configure Repo
+        </button>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main id="main-content">
+      <!-- Top Sticky Header -->
+      <header id="main-header" class="glass-header">
+        <div class="header-left">
+          <div class="history-nav">
+            <button class="nav-arrow" id="nav-back"><i data-lucide="chevron-left"></i></button>
+            <button class="nav-arrow" id="nav-forward"><i data-lucide="chevron-right"></i></button>
+          </div>
+          <div class="search-container" id="search-bar-wrapper">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="search-input" placeholder="What do you want to play?">
+            <button id="search-clear" class="search-clear-btn"><i data-lucide="x"></i></button>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <button id="btn-open-settings" class="btn-icon-label glass-button">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+          </button>
+          <div class="user-avatar" id="user-avatar-btn" title="GitHub Config">
+            <i data-lucide="user"></i>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Dynamic Scrollable Section -->
+      <div id="content-scroll" class="scroll-container">
+        
+        <!-- Welcome View -->
+        <section id="view-home" class="content-view active-view">
+          <div class="welcome-banner">
+            <div class="banner-overlay"></div>
+            <div class="banner-content">
+              <span class="badge">FEATURED PLAYLIST</span>
+              <h1 id="welcome-message">Good Evening</h1>
+              <p>Experience studio-quality playback with real-time audio analytics and full integration with your GitHub-hosted track list.</p>
+              <div class="banner-buttons">
+                <button id="btn-banner-play" class="btn-primary">
+                  <i data-lucide="play" class="icon-fill"></i> Play Now
+                </button>
+                <button id="btn-banner-visualizer" class="btn-secondary">
+                  <i data-lucide="activity"></i> Visualizer
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick Picks Grid -->
+          <div class="dashboard-section">
+            <h2>Quick Plays</h2>
+            <div class="quick-picks-grid" id="quick-picks-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+          
+          <!-- All Tracks Table -->
+          <div class="dashboard-section">
+            <div class="section-title-row">
+              <h2>All Tracks</h2>
+              <span class="track-count" id="track-count-text">0 Songs</span>
+            </div>
+            
+            <div class="tracks-table-container">
+              <table class="tracks-table">
+                <thead>
+                  <tr>
+                    <th class="col-num">#</th>
+                    <th class="col-title">Title</th>
+                    <th class="col-actions"></th>
+                  </tr>
+                </thead>
+                <tbody id="tracks-table-body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Liked Songs View -->
+        <section id="view-liked" class="content-view">
+          <div class="view-header liked-header-bg">
+            <div class="header-art glass-panel">
+              <i data-lucide="heart" class="liked-large-icon"></i>
+            </div>
+            <div class="header-details">
+              <span class="playlist-label">PLAYLIST</span>
+              <h1>Liked Songs</h1>
+              <p id="liked-summary">Your personal collection of favorite tracks.</p>
+            </div>
+          </div>
+          
+          <div class="view-actions">
+            <button id="btn-liked-play" class="btn-play-large">
+              <i data-lucide="play" class="icon-fill"></i>
+            </button>
+          </div>
+          
+          <div class="tracks-table-container">
+            <table class="tracks-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th class="col-title">Title</th>
+                  <th class="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody id="liked-table-body">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Playlist View -->
+        <section id="view-playlist" class="content-view">
+          <div class="view-header playlist-header-bg">
+            <div class="header-art glass-panel" id="playlist-view-art">
+              <i data-lucide="music" class="playlist-large-icon"></i>
+            </div>
+            <div class="header-details">
+              <span class="playlist-label">PLAYLIST</span>
+              <h1 id="playlist-view-title">Playlist Name</h1>
+              <p id="playlist-view-desc">A custom-curated selection.</p>
+            </div>
+          </div>
+          
+          <div class="view-actions">
+            <button id="btn-playlist-play" class="btn-play-large">
+              <i data-lucide="play" class="icon-fill"></i>
+            </button>
+            <button id="btn-delete-playlist" class="btn-secondary danger">
+              <i data-lucide="trash-2"></i> Delete Playlist
+            </button>
+          </div>
+          
+          <div class="tracks-table-container">
+            <table class="tracks-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th class="col-title">Title</th>
+                  <th class="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody id="playlist-table-body">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+        
+        <!-- Visualizer & Advanced Player Mode -->
+        <section id="view-visualizer-mode" class="content-view">
+          <div class="visualizer-view-container">
+            <div class="visualizer-details-panel">
+              <div class="vinyl-container">
+                <img id="vis-cover-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&h=300&fit=crop" alt="Vinyl Cover" class="vinyl-img">
+                <div class="vinyl-center"></div>
+              </div>
+              <div class="track-meta-large">
+                <h1 id="vis-track-title">No Track Selected</h1>
+                <p id="vis-track-artist">Select a track to start listening</p>
+              </div>
+              <div class="visualizer-options">
+                <label for="visualizer-style">Visualizer Theme:</label>
+                <select id="visualizer-style" class="glass-select">
+                  <option value="bars">Neon Frequency Bars</option>
+                  <option value="wave">Oscilloscope Waveform</option>
+                  <option value="circle">Circular Aura</option>
+                  <option value="particles">Retro Particle Field</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="visualizer-canvas-panel glass-panel">
+              <div class="canvas-header">
+                <i data-lucide="activity" class="neon-glow-icon"></i>
+                <span>Studio Audio Engine (Dynamic FFT)</span>
+              </div>
+              <div class="canvas-container">
+                <canvas id="audio-canvas"></canvas>
+              </div>
+              <div class="audio-notice" id="audio-notice">
+                <i data-lucide="info"></i>
+                <span>Click Play to start the visualizer engine. Browser security requires interaction first.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+      </div>
+    </main>
+    
+    <!-- Audio Player Bottom Bar -->
+    <footer id="player-bar" class="glass-panel">
+      <!-- Track Details (Left) -->
+      <div class="player-track-info">
+        <img id="player-cover-art" class="player-cover-img" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100&h=100&fit=crop" alt="Track Cover">
+        <div class="player-text-details">
+          <div class="player-song-title" id="player-song-title">Not Playing</div>
+          <div class="player-song-artist" id="player-song-artist">Choose a song</div>
+        </div>
+        <button id="btn-player-like" class="btn-icon track-like-btn" title="Like Song">
+          <i data-lucide="heart"></i>
+        </button>
+      </div>
+      
+      <!-- Player Controls (Center) -->
+      <div class="player-controls-wrapper">
+        <div class="player-buttons">
+          <button id="btn-shuffle" class="btn-icon" title="Shuffle"><i data-lucide="shuffle"></i></button>
+          <button id="btn-prev" class="btn-icon" title="Previous"><i data-lucide="skip-back"></i></button>
+          <button id="btn-play-pause" class="btn-play-pause" title="Play/Pause">
+            <i data-lucide="play" id="play-icon-main"></i>
+          </button>
+          <button id="btn-next" class="btn-icon" title="Next"><i data-lucide="skip-forward"></i></button>
+          <button id="btn-repeat" class="btn-icon" title="Repeat"><i data-lucide="repeat"></i></button>
+        </div>
+        
+        <div class="player-progress-container">
+          <span class="time-stamp" id="time-current">0:00</span>
+          <div class="progress-bar-wrapper">
+            <input type="range" id="progress-slider" min="0" max="100" value="0" step="0.1">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="time-stamp" id="time-total">0:00</span>
+        </div>
+      </div>
+      
+      <!-- Volume & Utility Controls (Right) -->
+      <div class="player-utility-controls">
+        <button id="btn-toggle-visualizer" class="btn-icon" title="Toggle Studio Visualizer">
+          <i data-lucide="activity"></i>
+        </button>
+        <button id="btn-toggle-queue" class="btn-icon" title="Queue List">
+          <i data-lucide="list-music"></i>
+        </button>
+        <div class="volume-container">
+          <button id="btn-volume-mute" class="btn-icon" title="Mute/Unmute">
+            <i data-lucide="volume-2" id="volume-icon"></i>
+          </button>
+          <div class="volume-bar-wrapper">
+            <input type="range" id="volume-slider" min="0" max="100" value="70">
+            <div class="volume-fill" id="volume-fill"></div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+
+  <!-- Settings Modal (GitHub API Configuration) -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-content glass-panel animated-popup">
+      <div class="modal-header">
+        <h2><i data-lucide="github"></i> Data Source Settings</h2>
+        <button id="btn-close-settings" class="btn-icon"><i data-lucide="x"></i></button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-description">
+          Configure where Splays fetches its song list. By default, it will load the local <code>x.txt</code>, but you can sync directly with your GitHub repository.
+        </p>
+        
+        <div class="form-group">
+          <label for="setting-source">Data Source Type</label>
+          <select id="setting-source" class="glass-select">
+            <option value="local">Local Filesystem (x.txt in root)</option>
+            <option value="github-raw">GitHub Raw URL (Public Repo)</option>
+            <option value="github-api">GitHub API (Recommended for Private/Public)</option>
+          </select>
+        </div>
+
+        <div id="github-settings-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="setting-username">GitHub Username / Owner</label>
+              <input type="text" id="setting-username" placeholder="e.g. nonxe" class="glass-input">
+            </div>
+            <div class="form-group">
+              <label for="setting-repo">Repository Name</label>
+              <input type="text" id="setting-repo" placeholder="e.g. splays" class="glass-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="setting-file">File Path in Repo</label>
+              <input type="text" id="setting-file" placeholder="e.g. x.txt" class="glass-input">
+            </div>
+            <div class="form-group">
+              <label for="setting-branch">Branch</label>
+              <input type="text" id="setting-branch" placeholder="e.g. main" class="glass-input">
+            </div>
+          </div>
+
+          <div class="form-group" id="pat-field-container">
+            <label for="setting-pat">GitHub PAT (Personal Access Token)</label>
+            <div class="input-with-icon">
+              <input type="password" id="setting-pat" placeholder="github_pat_..." class="glass-input">
+              <button id="btn-toggle-pat" class="btn-input-icon"><i data-lucide="eye"></i></button>
+            </div>
+            <small class="form-help">Tokens are stored securely only on your local browser (localStorage).</small>
+          </div>
+        </div>
+        
+        <div class="status-box glass-panel-nested" id="settings-status-box">
+          <div class="status-header">
+            <span>Connection Test:</span>
+            <span id="conn-status-badge" class="badge badge-idle">Idle</span>
+          </div>
+          <pre id="settings-log">No connection check executed yet.</pre>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button id="btn-reset-settings" class="btn-secondary">Reset to Default</button>
+        <div class="footer-right-buttons">
+          <button id="btn-test-connection" class="btn-secondary">Test Connection</button>
+          <button id="btn-save-settings" class="btn-primary">Save & Sync</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Playlist Modal -->
+  <div id="playlist-modal" class="modal-overlay">
+    <div class="modal-content glass-panel animated-popup small-modal">
+      <div class="modal-header">
+        <h2>Create Playlist</h2>
+        <button id="btn-close-playlist-modal" class="btn-icon"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="playlist-name-input">Playlist Name</label>
+          <input type="text" id="playlist-name-input" placeholder="e.g. My Techno Chill Vibes" class="glass-input" required>
+        </div>
+        <div class="form-group">
+          <label for="playlist-desc-input">Description (Optional)</label>
+          <input type="text" id="playlist-desc-input" placeholder="e.g. Beats to code by" class="glass-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-playlist" class="btn-secondary">Cancel</button>
+        <button id="btn-save-playlist" class="btn-primary">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queue Side Drawer -->
+  <div id="queue-drawer" class="drawer-overlay">
+    <div class="drawer-content glass-panel">
+      <div class="drawer-header">
+        <h2>Play Queue</h2>
+        <button id="btn-close-queue" class="btn-icon"><i data-lucide="x"></i></button>
+      </div>
+      <div class="drawer-body">
+        <div class="queue-section">
+          <h3>Now Playing</h3>
+          <div class="queue-current-track" id="queue-current-container">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+        <div class="queue-section">
+          <div class="queue-header-row">
+            <h3>Next Up</h3>
+            <button id="btn-clear-queue" class="btn-text-action">Clear All</button>
+          </div>
+          <ul class="queue-list" id="queue-list-container">
+            <!-- Rendered via JS -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu for Track Table Rows -->
+  <div id="track-context-menu" class="context-menu glass-panel">
+    <div class="context-menu-item" id="menu-play-now">
+      <i data-lucide="play" size="16"></i> Play Now
+    </div>
+    <div class="context-menu-item" id="menu-add-queue">
+      <i data-lucide="plus-circle" size="16"></i> Add to Queue
+    </div>
+    <div class="context-menu-item parent-item">
+      <div class="menu-label-with-icon">
+        <i data-lucide="list-music" size="16"></i> Add to Playlist
+      </div>
+      <i data-lucide="chevron-right" size="14"></i>
+      <ul class="submenu glass-panel" id="context-submenu-playlists">
+        <!-- Playlists will go here -->
+      </ul>
+    </div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" id="menu-favorite">
+      <i data-lucide="heart" size="16"></i> Like / Dislike
+    </div>
+  </div>
+
+  <!-- Main JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>
